@@ -30,19 +30,31 @@
       canvas {
         border: 2px solid grey;
       }
+      #game {
+        position: relative;
+        display: block;
+        margin: auto;
+        background-color: #f0f0f0;
+      }
+
+      #rankings {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        z-index: 1; /* 캔버스 위에 표시되도록 설정 */
+        font-family: Verdana, sans-serif;
+        font-size: 20px;
+        color: grey;
+        background-color: rgba(255, 255, 255, 0.8); /* 배경을 약간 투명하게 */
+        padding: 10px;
+        border-radius: 8px;
+      }
     </style>
     <script src="https://cdn.socket.io/socket.io-3.0.1.min.js"></script>
     <script src="./index.js" type="module"></script>
   </head>
   <body>
-    <canvas id="game"></canvas>
-    <div id="nickname-modal" class="modal" style="display: none">
-      <div class="modal-content">
-        <h2>게임 오버</h2>
-        <p>닉네임을 입력하세요:</p>
-        <input type="text" id="nickname-input" maxlength="10" />
-        <button id="submit-score">제출</button>
-      </div>
-    </div>
+    <canvas id="game" width="800" height="200"></canvas>
+    <div id="rankings"></div>
   </body>
 </html>

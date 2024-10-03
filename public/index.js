@@ -4,6 +4,7 @@ import CactiController from './CactiController.js';
 import Score from './Score.js';
 import ItemController from './ItemController.js';
 import { sendEvent } from './socket.js';
+import { addUserToRankings, drawRankings, initializeRankings } from './Ranking.js';
 
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
@@ -11,30 +12,24 @@ const ctx = canvas.getContext('2d');
 const GAME_SPEED_START = 1;
 const GAME_SPEED_INCREMENT = 0.00001;
 
-// 게임 크기
 const GAME_WIDTH = 800;
 const GAME_HEIGHT = 200;
 
-// 플레이어
-// 800 * 200 사이즈의 캔버스에서는 이미지의 기본크기가 크기때문에 1.5로 나눈 값을 사용. (비율 유지)
-const PLAYER_WIDTH = 88 / 1.5; // 58
-const PLAYER_HEIGHT = 94 / 1.5; // 62
+const PLAYER_WIDTH = 88 / 1.5;
+const PLAYER_HEIGHT = 94 / 1.5;
 const MAX_JUMP_HEIGHT = GAME_HEIGHT;
 const MIN_JUMP_HEIGHT = 150;
 
-// 땅
 const GROUND_WIDTH = 2400;
 const GROUND_HEIGHT = 24;
 const GROUND_SPEED = 0.5;
 
-// 선인장
 const CACTI_CONFIG = [
   { width: 48 / 1.5, height: 100 / 1.5, image: 'images/cactus_1.png' },
   { width: 98 / 1.5, height: 100 / 1.5, image: 'images/cactus_2.png' },
   { width: 68 / 1.5, height: 70 / 1.5, image: 'images/cactus_3.png' },
 ];
 
-// 아이템
 const ITEM_CONFIG = [
   { width: 50 / 1.5, height: 50 / 1.5, id: 1, image: 'images/items/pokeball_red.png' },
   { width: 50 / 1.5, height: 50 / 1.5, id: 2, image: 'images/items/pokeball_yellow.png' },
@@ -42,7 +37,6 @@ const ITEM_CONFIG = [
   { width: 50 / 1.5, height: 50 / 1.5, id: 4, image: 'images/items/pokeball_cyan.png' },
 ];
 
-// 게임 요소들
 let player = null;
 let ground = null;
 let cactiController = null;
@@ -56,15 +50,14 @@ let gameover = false;
 let hasAddedEventListenersForRestart = false;
 let waitingToStart = true;
 
+const userId = Math.floor(Math.random() * 1000);
+
 function createSprites() {
-  // 비율에 맞는 크기
-  // 유저
   const playerWidthInGame = PLAYER_WIDTH * scaleRatio;
   const playerHeightInGame = PLAYER_HEIGHT * scaleRatio;
   const minJumpHeightInGame = MIN_JUMP_HEIGHT * scaleRatio;
   const maxJumpHeightInGame = MAX_JUMP_HEIGHT * scaleRatio;
 
-  // 땅
   const groundWidthInGame = GROUND_WIDTH * scaleRatio;
   const groundHeightInGame = GROUND_HEIGHT * scaleRatio;
 
@@ -111,7 +104,6 @@ function getScaleRatio() {
   const screenHeight = Math.min(window.innerHeight, document.documentElement.clientHeight);
   const screenWidth = Math.min(window.innerHeight, document.documentElement.clientWidth);
 
-  // window is wider than the game width
   if (screenWidth / screenHeight < GAME_WIDTH / GAME_HEIGHT) {
     return screenWidth / GAME_WIDTH;
   } else {
@@ -140,6 +132,8 @@ function showGameOver() {
   const x = canvas.width / 4.5;
   const y = canvas.height / 2;
   ctx.fillText('GAME OVER', x, y);
+
+  drawRankings(); // 게임오버 시 랭킹 표시
 }
 
 function showStartGameText() {
@@ -189,21 +183,15 @@ function gameLoop(currentTime) {
     return;
   }
 
-  // 모든 환경에서 같은 게임 속도를 유지하기 위해 구하는 값
-  // 프레임 렌더링 속도
   const deltaTime = currentTime - previousTime;
   previousTime = currentTime;
 
   clearScreen();
 
   if (!gameover && !waitingToStart) {
-    // update
-    // 땅이 움직임
     ground.update(gameSpeed, deltaTime);
-    // 선인장
     cactiController.update(gameSpeed, deltaTime);
     itemController.update(gameSpeed, deltaTime);
-    // 달리기
     player.update(gameSpeed, deltaTime);
     updateGameSpeed(deltaTime);
 
@@ -213,14 +201,15 @@ function gameLoop(currentTime) {
   if (!gameover && cactiController.collideWith(player)) {
     gameover = true;
     score.setHighScore();
+    addUserToRankings(userId, score.score); // 게임오버 시 랭킹에 추가
     setupGameReset();
   }
+
   const collideWithItem = itemController.collideWith(player);
   if (collideWithItem && collideWithItem.itemId) {
     score.getItem(collideWithItem.itemId);
   }
 
-  // draw
   player.draw();
   cactiController.draw();
   ground.draw();
@@ -235,11 +224,10 @@ function gameLoop(currentTime) {
     showStartGameText();
   }
 
-  // 재귀 호출 (무한반복)
   requestAnimationFrame(gameLoop);
 }
 
-// 게임 프레임을 다시 그리는 메서드
+initializeRankings();
 requestAnimationFrame(gameLoop);
 
 window.addEventListener('keyup', reset, { once: true });
