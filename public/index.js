@@ -3,8 +3,14 @@ import Ground from './Ground.js';
 import CactiController from './CactiController.js';
 import Score from './Score.js';
 import ItemController from './ItemController.js';
+import Stage from './Stage.js';
 import { sendEvent } from './socket.js';
-import { addUserToRankings, drawRankings, initializeRankings } from './Ranking.js';
+import {
+  addUserToRankings,
+  drawRankings,
+  initializeRankings,
+  removeUserFromRankings,
+} from './Ranking.js';
 
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
@@ -50,7 +56,9 @@ let gameover = false;
 let hasAddedEventListenersForRestart = false;
 let waitingToStart = true;
 
-const userId = Math.floor(Math.random() * 1000);
+let userId = null;
+let userScores = {};
+let rankingAdded = false;
 
 function createSprites() {
   const playerWidthInGame = PLAYER_WIDTH * scaleRatio;
@@ -100,6 +108,9 @@ function createSprites() {
   score = new Score(ctx, scaleRatio);
 }
 
+const stage = new Stage(1);
+console.log(stage.getItems());
+
 function getScaleRatio() {
   const screenHeight = Math.min(window.innerHeight, document.documentElement.clientHeight);
   const screenWidth = Math.min(window.innerHeight, document.documentElement.clientWidth);
@@ -118,11 +129,10 @@ function setScreen() {
   createSprites();
 }
 
-setScreen();
-window.addEventListener('resize', setScreen);
-
-if (screen.orientation) {
-  screen.orientation.addEventListener('change', setScreen);
+function startGame() {
+  waitingToStart = false;
+  sendEvent(2, { timestamp: Date.now() });
+  requestAnimationFrame(gameLoop);
 }
 
 function showGameOver() {
@@ -133,7 +143,36 @@ function showGameOver() {
   const y = canvas.height / 2;
   ctx.fillText('GAME OVER', x, y);
 
-  drawRankings(); // 게임오버 시 랭킹 표시
+  const currentScore = score.getScore();
+  if (!userScores[userId] || currentScore > userScores[userId]) {
+    if (userScores[userId]) {
+      removeUserFromRankings(userId);
+    }
+    userScores[userId] = currentScore;
+    rankingAdded = false;
+  }
+
+  if (!rankingAdded) {
+    addUserToRankings(userId, userScores[userId]);
+    drawRankings();
+    rankingAdded = true;
+  }
+
+  canvas.removeEventListener('click', showInitialScreen);
+  window.removeEventListener('keyup', handleKeyUp);
+
+  canvas.addEventListener('click', showInitialScreen, { once: true });
+  window.addEventListener('keyup', handleKeyUp, { once: true });
+}
+
+function handleKeyUp(event) {
+  if (event.code === 'Space') {
+    if (waitingToStart) {
+      startGame();
+    } else {
+      showInitialScreen();
+    }
+  }
 }
 
 function showStartGameText() {
@@ -152,7 +191,7 @@ function updateGameSpeed(deltaTime) {
 function reset() {
   hasAddedEventListenersForRestart = false;
   gameover = false;
-  waitingToStart = false;
+  waitingToStart = true;
 
   ground.reset();
   cactiController.reset();
@@ -200,8 +239,6 @@ function gameLoop(currentTime) {
 
   if (!gameover && cactiController.collideWith(player)) {
     gameover = true;
-    score.setHighScore();
-    addUserToRankings(userId, score.score); // 게임오버 시 랭킹에 추가
     setupGameReset();
   }
 
@@ -227,7 +264,30 @@ function gameLoop(currentTime) {
   requestAnimationFrame(gameLoop);
 }
 
-initializeRankings();
-requestAnimationFrame(gameLoop);
+function showInitialScreen() {
+  clearScreen();
+  showStartGameText();
+  canvas.removeEventListener('click', startGame);
+  window.removeEventListener('keyup', handleKeyUp);
 
-window.addEventListener('keyup', reset, { once: true });
+  canvas.addEventListener('click', startGame, { once: true });
+  window.addEventListener('keyup', handleKeyUp, { once: true });
+}
+
+initializeRankings();
+
+document.getElementById('start-game').addEventListener('click', () => {
+  const nicknameInput = document.getElementById('nickname');
+  const nickname = nicknameInput.value.trim();
+
+  if (nickname) {
+    userId = nickname;
+    document.getElementById('nickname-container').style.display = 'none';
+    canvas.style.display = 'block';
+    setScreen();
+    showInitialScreen();
+  } else {
+    alert('Please enter a nickname.');
+  }
+});
+window.addEventListener('resize', setScreen);

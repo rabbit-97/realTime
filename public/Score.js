@@ -75,7 +75,7 @@ class Score {
   }
 
   getScore() {
-    return this.score;
+    return Math.floor(this.score);
   }
 
   draw() {
