@@ -224,19 +224,15 @@ function showGameOver() {
   ctx.fillText('GAME OVER', x, y);
 
   const currentScore = score.getScore();
-  if (!userScores[userId] || currentScore > userScores[userId]) {
-    if (userScores[userId]) {
+  const previousScore = userScores[userId] || 0;
+
+  if (currentScore > previousScore) {
+    if (previousScore > 0) {
       removeUserFromRankings(userId);
     }
     userScores[userId] = currentScore;
-    rankingAdded = false;
-  }
-
-  if (!rankingAdded && currentScore > userScores[userId]) {
-    addUserToRankings(userId, userScores[userId]);
+    addUserToRankings(userId, currentScore);
     drawRankings();
-    rankingAdded = true;
-
     saveUserScoreToServer(userId, currentScore);
   }
 
@@ -377,6 +373,8 @@ document.getElementById('start-game').addEventListener('click', async () => {
     const userScore = await fetchUserScoreFromServer(userId);
     if (userScore !== null) {
       userScores[userId] = userScore;
+    } else {
+      userScores[userId] = 0;
     }
 
     const leaderboard = await fetchLeaderboard();
