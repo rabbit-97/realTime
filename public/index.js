@@ -58,7 +58,7 @@ let waitingToStart = true;
 let userScores = {};
 let rankingAdded = false;
 
-let userId = 'user123'; // 예시 사용자 ID
+let userId = '';
 
 async function saveUserScoreToServer(userId, score) {
   try {
@@ -232,14 +232,13 @@ function showGameOver() {
     rankingAdded = false;
   }
 
-  if (!rankingAdded) {
+  if (!rankingAdded && currentScore > userScores[userId]) {
     addUserToRankings(userId, userScores[userId]);
     drawRankings();
     rankingAdded = true;
-  }
 
-  // 점수 저장 로직 추가
-  saveUserScoreToServer(userId, currentScore);
+    saveUserScoreToServer(userId, currentScore);
+  }
 
   canvas.removeEventListener('click', showInitialScreen);
   window.removeEventListener('keyup', handleKeyUp);
@@ -368,22 +367,18 @@ document.getElementById('start-game').addEventListener('click', async () => {
     document.getElementById('nickname-container').style.display = 'none';
     canvas.style.display = 'block';
 
-    // 사용자 정보 저장
     await saveUserInfoToServer(userId, { nickname });
 
-    // 사용자 정보 가져오기
     const userInfo = await fetchUserInfoFromServer(userId);
     if (userInfo) {
       console.log('User info:', userInfo);
     }
 
-    // 사용자 점수 가져오기
     const userScore = await fetchUserScoreFromServer(userId);
     if (userScore !== null) {
       userScores[userId] = userScore;
     }
 
-    // 랭킹 가져오기
     const leaderboard = await fetchLeaderboard();
     if (leaderboard) {
       leaderboard.forEach((entry) => {

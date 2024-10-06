@@ -24,15 +24,18 @@ await client.connect();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// 정적 파일 제공 설정
 app.use('/handlers', express.static('src/handlers'));
 
-// 점수 저장
 app.post('/save-score', async (req, res) => {
   const { userId, score } = req.body;
   try {
-    await client.zAdd('leaderboard', { score: parseInt(score, 10), value: userId });
-    res.status(200).send('Score saved');
+    const currentScore = await client.zScore('leaderboard', userId);
+    if (currentScore === null || score > currentScore) {
+      await client.zAdd('leaderboard', { score: parseInt(score, 10), value: userId });
+      res.status(200).send('Score saved successfully');
+    } else {
+      res.status(200).send('Score not updated, current score is higher or equal');
+    }
   } catch (err) {
     console.error('Error saving score:', err);
     res.status(500).send('Error saving score');
@@ -51,7 +54,6 @@ app.get('/get-score/:userId', async (req, res) => {
   }
 });
 
-// 사용자 정보 저장
 app.post('/save-user', async (req, res) => {
   const { userId, userInfo } = req.body;
   try {
@@ -63,7 +65,6 @@ app.post('/save-user', async (req, res) => {
   }
 });
 
-// 사용자 정보 가져오기
 app.get('/get-user/:userId', async (req, res) => {
   const { userId } = req.params;
   try {
@@ -75,7 +76,6 @@ app.get('/get-user/:userId', async (req, res) => {
   }
 });
 
-// 랭킹 조회
 app.get('/leaderboard', async (req, res) => {
   try {
     const leaderboard = await client.zRangeWithScores('leaderboard', 0, -1, { REV: true });
