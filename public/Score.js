@@ -38,8 +38,8 @@ class Score {
     this.scorePerSecond = 1 + (this.currentStage - 1);
   }
 
-  getItem(id) {
-    const itemScore = this.getItemScore(id);
+  async getItem(id) {
+    const itemScore = await this.getItemScore(id); // 비동기 함수 결과를 기다림
     this.score += itemScore * this.stageScoreMultiplier;
   }
 
