@@ -67,6 +67,17 @@
       #game {
         display: none;
       }
+
+      #message-container {
+        margin-top: 20px;
+        font-family: Verdana, sans-serif;
+        font-size: 20px;
+        color: grey;
+        background-color: rgba(255, 255, 255, 0.8);
+        padding: 10px;
+        border-radius: 8px;
+        text-align: center;
+      }
     </style>
     <script src="https://cdn.socket.io/socket.io-3.0.1.min.js"></script>
     <script src="./index.js" type="module"></script>
@@ -79,8 +90,6 @@
       <input type="text" id="nickname" name="nickname" />
       <button id="start-game">Start Game</button>
     </div>
-    <canvas id="game"></canvas>
-    <script src="https://cdn.socket.io/socket.io-3.0.1.min.js"></script>
-    <script src="./index.js" type="module"></script>
+    <div id="message-container"></div>
   </body>
 </html>

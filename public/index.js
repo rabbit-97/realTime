@@ -85,11 +85,17 @@ async function fetchUserScoreFromServer(userId) {
       const data = await response.json();
       console.log('User score:', data.score);
       return data.score;
+    } else if (response.status === 404) {
+      console.log(`No score found for user ${userId}, setting default score to 0`);
+      alert(`처음 오셨네요!! 안녕하세요~~ ${userId}님!`);
+      return 0;
     } else {
       console.error('Error getting score:', response.statusText);
+      return null;
     }
   } catch (err) {
     console.error('Error getting score:', err);
+    return null;
   }
 }
 
@@ -139,6 +145,22 @@ async function fetchLeaderboard() {
     }
   } catch (err) {
     console.error('Error getting leaderboard:', err);
+  }
+}
+
+async function fetchStageScore(userId) {
+  try {
+    const response = await fetch(`/api/stages/get-score/${userId}`);
+    if (response.ok) {
+      const data = await response.json();
+      return data.score;
+    } else {
+      console.error('Error getting stage score:', response.statusText);
+      return null;
+    }
+  } catch (err) {
+    console.error('Error getting stage score:', err);
+    return null;
   }
 }
 
@@ -235,6 +257,11 @@ function showGameOver() {
     saveUserScoreToServer(userId, currentScore);
   }
 
+  const highScore = Math.max(...Object.values(userScores));
+  if (currentScore === highScore) {
+    messageContainer.innerText = `${userId}가 랭킹 1등을 달성했습니다!`;
+  }
+
   canvas.removeEventListener('click', showInitialScreen);
   window.removeEventListener('keyup', handleKeyUp);
 
@@ -292,6 +319,17 @@ function clearScreen() {
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
+async function checkStageChange() {
+  const stageScore = await fetchStageScore(userId);
+  if (stageScore !== null && score.getScore() >= stageScore) {
+    score.stageChange = true;
+    score.currentStage++;
+    score.updateStageScoreMultiplier();
+    score.unlockItemsForStage(score.currentStage);
+    itemController.addItem(score.currentStage);
+  }
+}
+
 function gameLoop(currentTime) {
   if (previousTime === null) {
     previousTime = currentTime;
@@ -312,6 +350,8 @@ function gameLoop(currentTime) {
     updateGameSpeed(deltaTime);
 
     score.update(deltaTime);
+
+    checkStageChange();
   }
 
   if (!gameover && cactiController.collideWith(player)) {

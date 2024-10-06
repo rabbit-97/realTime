@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url';
 const router = express.Router();
 
 const itemUnlockRouter = (client) => {
-  router.get('/unlock-item/:itemId', async (req, res) => {
+  router.get('/:itemId', async (req, res) => {
     const { itemId } = req.params;
     try {
       const isUnlocked = await client.hGet(`item:${itemId}`, 'unlocked');

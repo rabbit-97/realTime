@@ -17,7 +17,7 @@ class Score {
   }
 
   update(deltaTime) {
-    this.score += deltaTime * 0.001 * this.scorePerSecond * this.stageScoreMultiplier;
+    this.score += deltaTime * 0.001;
 
     if (this.score >= this.nextStageThreshold && this.currentStage < this.maxStage) {
       this.stageChange = true;
@@ -39,7 +39,7 @@ class Score {
   }
 
   async getItem(id) {
-    const itemScore = await this.getItemScore(id); // 비동기 함수 결과를 기다림
+    const itemScore = await this.getItemScore(id);
     this.score += itemScore * this.stageScoreMultiplier;
   }
 
