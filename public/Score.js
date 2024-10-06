@@ -7,35 +7,49 @@ class Score {
     this.scaleRatio = scaleRatio;
     this.score = 0;
     this.highScore = 0;
-    this.currentStage = 1;
-    this.maxStage = 5;
+    this.currentStage = 1000;
     this.stageScoreMultiplier = 1;
     this.HIGH_SCORE_KEY = 'highScore';
     this.stageChange = false;
     this.scorePerSecond = 1;
-    this.nextStageThreshold = 100;
   }
 
-  update(deltaTime) {
-    this.score += deltaTime * 0.001;
+  async update(deltaTime) {
+    this.score += deltaTime * 0.001 * this.scorePerSecond;
+    const nextStageId = await this.getStageData(this.score);
 
-    if (this.score >= this.nextStageThreshold && this.currentStage < this.maxStage) {
+    if (nextStageId && this.currentStage !== nextStageId) {
       this.stageChange = true;
       console.log('Stage change event sent');
       sendEvent(11, {
         currentStage: this.currentStage,
-        targetStage: this.currentStage + 1,
+        targetStage: nextStageId,
         score: this.score,
       });
-      this.currentStage++;
+      this.currentStage = nextStageId;
       this.updateStageScoreMultiplier();
-      this.nextStageThreshold += 100;
+    }
+  }
+
+  async getStageData(score) {
+    try {
+      const response = await fetch(`/api/stages/get-stage/${score}`);
+      if (response.ok) {
+        const data = await response.json();
+        return data.stage;
+      } else {
+        console.error('Error getting stage data:', response.statusText);
+        return null;
+      }
+    } catch (err) {
+      console.error('Error fetching stage data from server:', err);
+      return null;
     }
   }
 
   updateStageScoreMultiplier() {
-    this.stageScoreMultiplier = 1 + (this.currentStage - 1) * 0.5;
-    this.scorePerSecond = 1 + (this.currentStage - 1);
+    this.stageScoreMultiplier = 1 + (this.currentStage - 1000) * 0.5;
+    this.scorePerSecond = 1 + (this.currentStage - 1000);
   }
 
   async getItem(id) {
@@ -61,11 +75,10 @@ class Score {
 
   reset() {
     this.score = 0;
-    this.currentStage = 1;
+    this.currentStage = 1000;
     this.stageScoreMultiplier = 1;
     this.stageChange = false;
     this.scorePerSecond = 1;
-    this.nextStageThreshold = 100;
   }
 
   setHighScore() {
@@ -77,6 +90,10 @@ class Score {
 
   getScore() {
     return Math.floor(this.score);
+  }
+
+  getDisplayStage() {
+    return this.currentStage - 999;
   }
 
   draw() {
@@ -93,8 +110,10 @@ class Score {
     const scorePadded = Math.floor(this.score).toString().padStart(6, 0);
     const highScorePadded = highScore.toString().padStart(6, 0);
 
+    const displayStage = this.getDisplayStage();
+
     this.ctx.fillText(scorePadded, scoreX, y);
-    this.ctx.fillText(`Stage ${this.currentStage}`, stageX, y);
+    this.ctx.fillText(`Stage ${displayStage}`, stageX, y);
   }
 }
 

@@ -46,10 +46,10 @@ const saveJsonToRedis = async (redisClient, jsonFilePath) => {
 
     // Redis에 데이터 저장
     if (Array.isArray(jsonData.data)) {
-      for (const item of jsonData.data) {
-        const key = `item:${item.id}`;
-        await redisClient.set(key, JSON.stringify(item));
-        console.log(`Redis에 저장된 키: ${key}, 값: ${JSON.stringify(item)}`);
+      for (const stage of jsonData.data) {
+        const key = `stage:${stage.id}`;
+        await redisClient.set(key, JSON.stringify(stage));
+        console.log(`Redis에 저장된 키: ${key}, 값: ${JSON.stringify(stage)}`);
       }
     } else {
       console.error('JSON 데이터 형식이 올바르지 않습니다.');

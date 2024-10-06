@@ -17,6 +17,31 @@ const stageRouter = (client) => {
     }
   });
 
+  // 새로운 스테이지 검증 API
+  router.get('/get-stage/:score', async (req, res) => {
+    const { score } = req.params;
+    try {
+      const stageData = await client.get('stageData');
+      if (!stageData) {
+        throw new Error('Stage data not found');
+      }
+      const stages = JSON.parse(stageData);
+
+      // 주어진 점수 이상에 해당하는 스테이지 찾기
+      const currentStage = stages.reduce((acc, stage) => {
+        if (parseInt(score) >= stage.score) {
+          return stage.id;
+        }
+        return acc;
+      }, stages[0].id);
+
+      res.status(200).json({ stage: currentStage });
+    } catch (err) {
+      console.error('Error getting stage:', err);
+      res.status(500).send('Error getting stage');
+    }
+  });
+
   router.post('/save-json', async (req, res) => {
     console.log('save-json API 호출됨');
     const __filename = fileURLToPath(import.meta.url);
