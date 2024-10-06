@@ -18,7 +18,7 @@ const app = express();
 const server = createServer(app);
 
 const client = createClient({
-  url: 'redis://localhost:6379',
+  url: 'redis://172.31.42.222:6379',
 });
 
 client.on('connect', () => {
