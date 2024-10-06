@@ -46,7 +46,7 @@ class Score {
   getItemScore(itemId) {
     switch (itemId) {
       case 1:
-        return 10;
+        return 100;
       case 2:
         return 20;
       case 3:

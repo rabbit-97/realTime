@@ -3,7 +3,6 @@ import Ground from './Ground.js';
 import CactiController from './CactiController.js';
 import Score from './Score.js';
 import ItemController from './ItemController.js';
-import Stage from './Stage.js';
 import { sendEvent } from './socket.js';
 import {
   addUserToRankings,
@@ -56,9 +55,93 @@ let gameover = false;
 let hasAddedEventListenersForRestart = false;
 let waitingToStart = true;
 
-let userId = null;
 let userScores = {};
 let rankingAdded = false;
+
+let userId = 'user123'; // 예시 사용자 ID
+
+async function saveUserScoreToServer(userId, score) {
+  try {
+    const response = await fetch('/save-score', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ userId, score }),
+    });
+    if (response.ok) {
+      console.log('Score saved successfully');
+    } else {
+      console.error('Error saving score:', response.statusText);
+    }
+  } catch (err) {
+    console.error('Error saving score:', err);
+  }
+}
+
+async function fetchUserScoreFromServer(userId) {
+  try {
+    const response = await fetch(`/get-score/${userId}`);
+    if (response.ok) {
+      const data = await response.json();
+      console.log('User score:', data.score);
+      return data.score;
+    } else {
+      console.error('Error getting score:', response.statusText);
+    }
+  } catch (err) {
+    console.error('Error getting score:', err);
+  }
+}
+
+async function saveUserInfoToServer(userId, userInfo) {
+  try {
+    const response = await fetch('/save-user', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ userId, userInfo }),
+    });
+    if (response.ok) {
+      console.log('User info saved successfully');
+    } else {
+      console.error('Error saving user info:', response.statusText);
+    }
+  } catch (err) {
+    console.error('Error saving user info:', err);
+  }
+}
+
+async function fetchUserInfoFromServer(userId) {
+  try {
+    const response = await fetch(`/get-user/${userId}`);
+    if (response.ok) {
+      const data = await response.json();
+      console.log('User info:', data.userInfo);
+      return data.userInfo;
+    } else {
+      console.error('Error getting user info:', response.statusText);
+    }
+  } catch (err) {
+    console.error('Error getting user info:', err);
+  }
+}
+
+async function fetchLeaderboard() {
+  try {
+    const response = await fetch('/leaderboard');
+    if (response.ok) {
+      const leaderboard = await response.json();
+      console.log('Leaderboard:', leaderboard);
+      return leaderboard;
+    } else {
+      console.error('Error getting leaderboard:', response.statusText);
+    }
+  } catch (err) {
+    console.error('Error getting leaderboard:', err);
+  }
+}
 
 function createSprites() {
   const playerWidthInGame = PLAYER_WIDTH * scaleRatio;
@@ -108,9 +191,6 @@ function createSprites() {
   score = new Score(ctx, scaleRatio);
 }
 
-const stage = new Stage(1);
-console.log(stage.getItems());
-
 function getScaleRatio() {
   const screenHeight = Math.min(window.innerHeight, document.documentElement.clientHeight);
   const screenWidth = Math.min(window.innerHeight, document.documentElement.clientWidth);
@@ -157,6 +237,9 @@ function showGameOver() {
     drawRankings();
     rankingAdded = true;
   }
+
+  // 점수 저장 로직 추가
+  saveUserScoreToServer(userId, currentScore);
 
   canvas.removeEventListener('click', showInitialScreen);
   window.removeEventListener('keyup', handleKeyUp);
@@ -276,7 +359,7 @@ function showInitialScreen() {
 
 initializeRankings();
 
-document.getElementById('start-game').addEventListener('click', () => {
+document.getElementById('start-game').addEventListener('click', async () => {
   const nicknameInput = document.getElementById('nickname');
   const nickname = nicknameInput.value.trim();
 
@@ -284,10 +367,36 @@ document.getElementById('start-game').addEventListener('click', () => {
     userId = nickname;
     document.getElementById('nickname-container').style.display = 'none';
     canvas.style.display = 'block';
+
+    // 사용자 정보 저장
+    await saveUserInfoToServer(userId, { nickname });
+
+    // 사용자 정보 가져오기
+    const userInfo = await fetchUserInfoFromServer(userId);
+    if (userInfo) {
+      console.log('User info:', userInfo);
+    }
+
+    // 사용자 점수 가져오기
+    const userScore = await fetchUserScoreFromServer(userId);
+    if (userScore !== null) {
+      userScores[userId] = userScore;
+    }
+
+    // 랭킹 가져오기
+    const leaderboard = await fetchLeaderboard();
+    if (leaderboard) {
+      leaderboard.forEach((entry) => {
+        addUserToRankings(entry.value, entry.score);
+      });
+      drawRankings();
+    }
+
     setScreen();
     showInitialScreen();
   } else {
     alert('Please enter a nickname.');
   }
 });
+
 window.addEventListener('resize', setScreen);
