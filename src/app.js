@@ -1,14 +1,23 @@
 import express from 'express';
 import { createServer } from 'http';
-import { loadGameAssets } from './init/assets.js';
-import initSocket from './init/socket.js';
 import { createClient } from 'redis';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import initSocket from './init/socket.js';
+import itemRouter from './routes/itemRouter.js';
+import userRouter from './routes/userRouter.js';
+import scoreRouter from './routes/scoreRouter.js';
+import stageRouter from './routes/stageRouter.js';
+import itemUnlockRouter from './routes/itemUnlockRouter.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const server = createServer(app);
 
 const client = createClient({
-  url: 'redis://localhost:6379', // 레디스 서버 URL을 올바르게 설정합니다.
+  url: 'redis://localhost:6379',
 });
 
 client.on('connect', () => {
@@ -23,87 +32,16 @@ await client.connect();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-
+initSocket(server);
+app.use(express.static(path.join(__dirname, '../public')));
 app.use('/handlers', express.static('src/handlers'));
 
-app.post('/save-score', async (req, res) => {
-  const { userId, score } = req.body;
-  try {
-    const currentScore = await client.zScore('leaderboard', userId);
-    if (currentScore === null || score > currentScore) {
-      await client.zAdd('leaderboard', { score: parseInt(score, 10), value: userId });
-      res.status(200).send('Score saved successfully');
-    } else {
-      res.status(200).send('Score not updated, current score is higher or equal');
-    }
-  } catch (err) {
-    console.error('Error saving score:', err);
-    res.status(500).send('Error saving score');
-  }
-});
+app.use('/api/items', itemRouter(client));
+app.use('/api/users', userRouter(client));
+app.use('/api/scores', scoreRouter(client));
+app.use('/api/stages', stageRouter(client));
+app.use('/api/item-unlock', itemUnlockRouter(client));
 
-// 점수 가져오기
-app.get('/get-score/:userId', async (req, res) => {
-  const { userId } = req.params;
-  try {
-    const score = await client.zScore('leaderboard', userId);
-    res.status(200).json({ score });
-  } catch (err) {
-    console.error('Error getting score:', err);
-    res.status(500).send('Error getting score');
-  }
-});
-
-app.post('/save-user', async (req, res) => {
-  const { userId, userInfo } = req.body;
-  try {
-    await client.set(`user:${userId}:info`, JSON.stringify(userInfo));
-    res.status(200).send('User info saved');
-  } catch (err) {
-    console.error('Error saving user info:', err);
-    res.status(500).send('Error saving user info');
-  }
-});
-
-app.get('/get-user/:userId', async (req, res) => {
-  const { userId } = req.params;
-  try {
-    const userInfo = await client.get(`user:${userId}:info`);
-    res.status(200).json({ userInfo: JSON.parse(userInfo) });
-  } catch (err) {
-    console.error('Error getting user info:', err);
-    res.status(500).send('Error getting user info');
-  }
-});
-
-app.get('/leaderboard', async (req, res) => {
-  try {
-    const leaderboard = await client.zRangeWithScores('leaderboard', 0, -1, { REV: true });
-    res.status(200).json(leaderboard);
-  } catch (err) {
-    console.error('Error getting leaderboard:', err);
-    res.status(500).send('Error getting leaderboard');
-  }
-});
-
-const PORT = 3000;
-
-app.use(express.static('public'));
-app.use('/assets', express.static('assets'));
-
-app.get('/', (req, res) => {
-  res.send('Hello World!');
-});
-
-server.listen(PORT, async () => {
-  console.log(`server is running on port ${PORT}`);
-
-  try {
-    const assets = await loadGameAssets();
-    console.log(assets);
-    console.log('Assets loaded successfully');
-  } catch (err) {
-    console.error('Error loading assets:', err);
-  }
-  initSocket(server);
+server.listen(3000, () => {
+  console.log('Server is running on http://localhost:3000');
 });

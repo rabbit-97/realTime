@@ -12,8 +12,8 @@ class Score {
     this.stageScoreMultiplier = 1;
     this.HIGH_SCORE_KEY = 'highScore';
     this.stageChange = false;
-    this.scorePerSecond = 1; // 초당 1점씩 증가
-    this.nextStageThreshold = 100; // 다음 스테이지로 넘어가는 점수 임계값
+    this.scorePerSecond = 1;
+    this.nextStageThreshold = 100;
   }
 
   update(deltaTime) {
@@ -29,13 +29,13 @@ class Score {
       });
       this.currentStage++;
       this.updateStageScoreMultiplier();
-      this.nextStageThreshold += 100; // 다음 스테이지 임계값 증가
+      this.nextStageThreshold += 100;
     }
   }
 
   updateStageScoreMultiplier() {
     this.stageScoreMultiplier = 1 + (this.currentStage - 1) * 0.5;
-    this.scorePerSecond = 1 + (this.currentStage - 1); // 스테이지가 올라갈 때마다 초당 점수 증가
+    this.scorePerSecond = 1 + (this.currentStage - 1);
   }
 
   getItem(itemId) {
@@ -46,7 +46,7 @@ class Score {
   getItemScore(itemId) {
     switch (itemId) {
       case 1:
-        return 100;
+        return 10;
       case 2:
         return 20;
       case 3:
@@ -87,7 +87,7 @@ class Score {
     this.ctx.fillStyle = '#525250';
 
     const scoreX = this.canvas.width - 75 * this.scaleRatio;
-    const stageX = scoreX - 100 * this.scaleRatio; // 점수 바로 왼쪽에 스테이지 위치
+    const stageX = scoreX - 100 * this.scaleRatio;
 
     const scorePadded = Math.floor(this.score).toString().padStart(6, 0);
     const highScorePadded = highScore.toString().padStart(6, 0);

@@ -61,7 +61,7 @@ let userId = '';
 
 async function saveUserScoreToServer(userId, score) {
   try {
-    const response = await fetch('/save-score', {
+    const response = await fetch('/api/scores/save-score', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -80,7 +80,7 @@ async function saveUserScoreToServer(userId, score) {
 
 async function fetchUserScoreFromServer(userId) {
   try {
-    const response = await fetch(`/get-score/${userId}`);
+    const response = await fetch(`/api/scores/get-score/${userId}`);
     if (response.ok) {
       const data = await response.json();
       console.log('User score:', data.score);
@@ -95,12 +95,12 @@ async function fetchUserScoreFromServer(userId) {
 
 async function saveUserInfoToServer(userId, userInfo) {
   try {
-    const response = await fetch('/save-user', {
+    const response = await fetch('/api/users/save-user', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ userId, userInfo }),
+      body: JSON.stringify({ userId, userData: userInfo }),
     });
     if (response.ok) {
       console.log('User info saved successfully');
@@ -114,11 +114,11 @@ async function saveUserInfoToServer(userId, userInfo) {
 
 async function fetchUserInfoFromServer(userId) {
   try {
-    const response = await fetch(`/get-user/${userId}`);
+    const response = await fetch(`/api/users/get-user/${userId}`);
     if (response.ok) {
       const data = await response.json();
-      console.log('User info:', data.userInfo);
-      return data.userInfo;
+      console.log('User info:', data);
+      return data;
     } else {
       console.error('Error getting user info:', response.statusText);
     }
@@ -129,7 +129,7 @@ async function fetchUserInfoFromServer(userId) {
 
 async function fetchLeaderboard() {
   try {
-    const response = await fetch('/leaderboard');
+    const response = await fetch('/api/scores/leaderboard');
     if (response.ok) {
       const leaderboard = await response.json();
       console.log('Leaderboard:', leaderboard);
@@ -330,7 +330,6 @@ function gameLoop(currentTime) {
   score.draw();
   itemController.draw();
 
-  // 최고 점수와 유저 아이디 표시
   const highScore = Math.max(...Object.values(userScores));
   const highScoreUser = Object.keys(userScores).find((key) => userScores[key] === highScore);
   if (highScoreUser) {
