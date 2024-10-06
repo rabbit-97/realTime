@@ -87,14 +87,12 @@ class Score {
     this.ctx.fillStyle = '#525250';
 
     const scoreX = this.canvas.width - 75 * this.scaleRatio;
-    const highScoreX = scoreX - 125 * this.scaleRatio;
-    const stageX = highScoreX - 100 * this.scaleRatio;
+    const stageX = scoreX - 100 * this.scaleRatio; // 점수 바로 왼쪽에 스테이지 위치
 
     const scorePadded = Math.floor(this.score).toString().padStart(6, 0);
     const highScorePadded = highScore.toString().padStart(6, 0);
 
     this.ctx.fillText(scorePadded, scoreX, y);
-    this.ctx.fillText(`HI ${highScorePadded}`, highScoreX, y);
     this.ctx.fillText(`Stage ${this.currentStage}`, stageX, y);
   }
 }

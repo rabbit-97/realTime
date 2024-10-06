@@ -56,7 +56,6 @@ let hasAddedEventListenersForRestart = false;
 let waitingToStart = true;
 
 let userScores = {};
-let rankingAdded = false;
 
 let userId = '';
 
@@ -331,6 +330,17 @@ function gameLoop(currentTime) {
   score.draw();
   itemController.draw();
 
+  // 최고 점수와 유저 아이디 표시
+  const highScore = Math.max(...Object.values(userScores));
+  const highScoreUser = Object.keys(userScores).find((key) => userScores[key] === highScore);
+  if (highScoreUser) {
+    const fontSize = 20 * scaleRatio;
+    ctx.font = `${fontSize}px serif`;
+    ctx.fillStyle = '#525250';
+    const scoreX = canvas.width - 75 * scaleRatio;
+
+    ctx.fillText(`High-score ${highScoreUser}: ${highScore}`, 10, 30);
+  }
   if (gameover) {
     showGameOver();
   }
