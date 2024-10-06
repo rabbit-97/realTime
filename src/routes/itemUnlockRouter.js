@@ -1,5 +1,6 @@
 import express from 'express';
-import saveJsonToRedis from '../redis/itemUnlock.js';
+import path from 'path';
+import saveJsonToRedis from '../redis/stage.js';
 
 const router = express.Router();
 
@@ -20,7 +21,7 @@ const itemUnlockRouter = (client) => {
   });
 
   router.post('/save-json', async (req, res) => {
-    const jsonFilePath = path.join(__dirname, '../data/item_unlock.json');
+    const jsonFilePath = path.join(__dirname, '../assets/item_unlock.json');
     try {
       await saveJsonToRedis(redisClient, jsonFilePath);
       res.status(200).json({ message: 'JSON 파일이 성공적으로 Redis에 저장되었습니다.' });

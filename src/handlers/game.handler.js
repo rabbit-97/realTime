@@ -4,6 +4,11 @@ import { getStage, setStage, clearStage } from '../models/stage.model.js';
 export const gameStart = (uuid, payload) => {
   const { stages } = getGameAssets();
 
+  if (!stages || !stages.data || stages.data.length === 0) {
+    console.error('Stages data is not available');
+    return { status: 'fail', message: 'Stages data is not available' };
+  }
+
   clearStage(uuid);
   // 스테이지스 배열에서 0번째 - 첫번째 스테이지
   setStage(uuid, stages.data[0].id, payload.timestamp, 0);

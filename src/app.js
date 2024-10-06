@@ -9,6 +9,7 @@ import userRouter from './routes/userRouter.js';
 import scoreRouter from './routes/scoreRouter.js';
 import stageRouter from './routes/stageRouter.js';
 import itemUnlockRouter from './routes/itemUnlockRouter.js';
+import { loadGameAssets } from './init/assets.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -32,6 +33,7 @@ await client.connect();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+await loadGameAssets();
 initSocket(server);
 app.use(express.static(path.join(__dirname, '../public')));
 app.use('/handlers', express.static('src/handlers'));

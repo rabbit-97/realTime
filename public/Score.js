@@ -38,23 +38,24 @@ class Score {
     this.scorePerSecond = 1 + (this.currentStage - 1);
   }
 
-  getItem(itemId) {
-    const itemScore = this.getItemScore(itemId);
+  getItem(id) {
+    const itemScore = this.getItemScore(id);
     this.score += itemScore * this.stageScoreMultiplier;
   }
 
-  getItemScore(itemId) {
-    switch (itemId) {
-      case 1:
-        return 10;
-      case 2:
-        return 20;
-      case 3:
-        return 30;
-      case 4:
-        return 40;
-      default:
+  async getItemScore(id) {
+    try {
+      const response = await fetch(`/api/items/${id}`);
+      if (response.ok) {
+        const item = await response.json();
+        return item.score;
+      } else {
+        console.error(`Item with ID ${id} not found`);
         return 0;
+      }
+    } catch (err) {
+      console.error('Error fetching item from server:', err);
+      return 0;
     }
   }
 
